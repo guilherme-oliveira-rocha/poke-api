@@ -7,7 +7,9 @@ import { ref } from 'vue';
 interface IPokemon{
   id: number,
   name: string,
+  color: string,
   abilities: IAbilities,
+  description: string,
   height: number,
   weight:number,
   image: string
@@ -21,8 +23,7 @@ interface IAbility {
 
 interface IAbilities extends Array<IAbility>{}
 
-const arrPokemon = ref<Array<IPokemons>>([]);
-// const arrNews = ref<(number | string | boolean)[]>([])
+const arrPokemon = ref<Array<IPokemon>>([]);
 
 async function fetApi(url: string): Promise<any | Error> {
     try {
@@ -43,7 +44,7 @@ async function searchPokemon():Promise<any> {
 
   const pokemons:IPokemons = [];
 
-  const firstReqPokemon = await fetApi("https://pokeapi.co/api/v2/pokemon?limit=55");
+  const firstReqPokemon = await fetApi("https://pokeapi.co/api/v2/pokemon?limit=20");
 
   if(firstReqPokemon instanceof Error){
     return console.log(firstReqPokemon);
@@ -51,7 +52,9 @@ async function searchPokemon():Promise<any> {
 
   for(const info of firstReqPokemon.results) {
     const secondReqPokemon = await fetApi(info.url);
-    pokemons.push(...PokemonDTO(secondReqPokemon));
+    const thirdReqPokemon = await fetApi(secondReqPokemon.species.url);
+    const datePrimitiveMerged = Object.assign({}, secondReqPokemon, thirdReqPokemon); 
+    pokemons.push(...PokemonDTO(datePrimitiveMerged));
   }
 
   return pokemons
@@ -64,10 +67,12 @@ function PokemonDTO(primitive:any):IPokemons {
     pokemons.push({
       id: primitive.id,
       name: primitive.name,
+      color: primitive.color.name,
       abilities: AbilitiesDTO(primitive.abilities),
+      description: primitive.flavor_text_entries[7].flavor_text.replace(/[^a-zA-Z-. ]/g, ""),
       height: primitive.height,
       weight: primitive.weight,
-      image: primitive.sprites.back_default,
+      image: primitive.sprites.other.dream_world.front_default,
     })
 
   return pokemons
@@ -77,14 +82,14 @@ function AbilitiesDTO(primitives:any[]):IAbilities {
 
   const abilities:IAbilities = [];
 
-for(const infoAbility of primitives) {
+  for(const infoAbility of primitives) {
 
-  abilities.push({
-    name: infoAbility.ability.name,
-  })
-}
+    abilities.push({
+      name: infoAbility.ability.name,
+    })
+  }
 
-return abilities
+  return abilities
 }
 
 (async function(){
@@ -100,7 +105,9 @@ return abilities
   </header>
 
   <main>
+      <!-- <CardNewInfo :arrPokemon="arrPokemon"></CardNewInfo> -->
       <CardNewInfo :arrPokemon="arrPokemon"></CardNewInfo>
+
   </main>
 </template>
 
