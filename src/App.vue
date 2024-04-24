@@ -44,7 +44,7 @@ async function searchPokemon():Promise<any> {
 
   const pokemons:IPokemons = [];
 
-  const firstReqPokemon = await fetApi("https://pokeapi.co/api/v2/pokemon?limit=20");
+  const firstReqPokemon = await fetApi("https://pokeapi.co/api/v2/pokemon?limit=15");
 
   if(firstReqPokemon instanceof Error){
     return console.log(firstReqPokemon);
@@ -55,6 +55,7 @@ async function searchPokemon():Promise<any> {
     const thirdReqPokemon = await fetApi(secondReqPokemon.species.url);
     const datePrimitiveMerged = Object.assign({}, secondReqPokemon, thirdReqPokemon); 
     pokemons.push(...PokemonDTO(datePrimitiveMerged));
+    // console.log(pokemons);
   }
 
   return pokemons
@@ -96,7 +97,6 @@ function AbilitiesDTO(primitives:any[]):IAbilities {
   arrPokemon.value = await searchPokemon();
 })()
 
-
 </script>
 
 <template>
@@ -105,9 +105,7 @@ function AbilitiesDTO(primitives:any[]):IAbilities {
   </header>
 
   <main>
-      <!-- <CardNewInfo :arrPokemon="arrPokemon"></CardNewInfo> -->
-      <CardNewInfo :arrPokemon="arrPokemon"></CardNewInfo>
-
+    <CardNewInfo :arrPokemon="arrPokemon"></CardNewInfo>
   </main>
 </template>
 
