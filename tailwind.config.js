@@ -9,6 +9,7 @@ export default {
       colors: {
         'brown': '#964B00',
         'brownLight': '#C4A484',
+        'brownDark': '#5C4033'
 
       },
     },

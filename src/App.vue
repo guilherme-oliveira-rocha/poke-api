@@ -44,7 +44,7 @@ async function searchPokemon():Promise<any> {
 
   const pokemons:IPokemons = [];
 
-  const firstReqPokemon = await fetApi("https://pokeapi.co/api/v2/pokemon?limit=15");
+  const firstReqPokemon = await fetApi("https://pokeapi.co/api/v2/pokemon");
 
   if(firstReqPokemon instanceof Error){
     return console.log(firstReqPokemon);
