@@ -35,7 +35,7 @@ async function fetApi(url: string): Promise<any | Error> {
 async function searchPokemon():Promise<any> {
 
   const pokemons:IPokemons = [];
-  const firstReqPokemon = await fetApi("https://pokeapi.co/api/v2/pokemon?limit=30");
+  const firstReqPokemon = await fetApi("https://pokeapi.co/api/v2/pokemon?limit=15");
 
   if(firstReqPokemon instanceof Error){
     return console.log(firstReqPokemon);
