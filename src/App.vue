@@ -1,117 +1,120 @@
 <script setup lang="ts">
 
-import NavBar from './components/NavBar.vue'
-import CardNewInfo from './components/CardNewInfo.vue';
-import LoadingApi from './components/LoadingApi.vue';
-import ErrorApi from './components/ErrorApi.vue';
-import type { IAbilities, IPokemons } from './interfaces/interfaces';
-import { ref } from 'vue';
+  import NavBar from './components/NavBar.vue'
+  import CardNewInfo from './components/CardNewInfo.vue';
+  import LoadingApi from './components/LoadingApi.vue';
+  import ErrorApi from './components/ErrorApi.vue';
+  import type { IAbilities, IPokemons } from './interfaces/interfaces';
+  import { ref } from 'vue';
 
-let showLoadingApi =  ref<boolean>(false);
-let showErrorApi = ref<boolean>(true);
-const arrPokemon = ref<IPokemons>([]);
+  let showLoadingApi =  ref<boolean>(false);
+  let showErrorApi = ref<boolean>(false);
+  const arrPokemon = ref<IPokemons>([]);
 
-async function fetApi(url: string): Promise<any | Error> {
+  async function fetApi(url: string): Promise<any | Error> {
 
-  showLoadingApi.value =  true;
-  
-    try {
-      const response = await fetch(url);
-      if (!response.ok) {
-        return new Error(
-          `Something went wrong with the request, check your URL or your Internet connection!`
-        );
+    showLoadingApi.value =  true;
+    showErrorApi.value =  false;
+
+      try {
+        const response = await fetch(url);
+        if (!response.ok) {
+          showErrorApi.value = true;
+          return new Error(
+            `Something went wrong with the request, check your URL or your Internet connection!`
+          );
+        }
+        showErrorApi.value = false;
+
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        showErrorApi.value = true;
+        return error
+      }finally{
+        showLoadingApi.value = false;
       }
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      showErrorApi.value = false;
-      return error
-    }finally{
-      showLoadingApi.value =  false;
+  }
+
+  async function searchPokemon():Promise<any> {
+
+    const pokemons:IPokemons = [];
+    const firstReqPokemon = await fetApi("https://pokeapi.co/api/v2/pokemon?limit=15");
+
+    if(firstReqPokemon instanceof Error){
+      return console.log(firstReqPokemon);
     }
-}
 
-async function searchPokemon():Promise<any> {
+    for(const info of firstReqPokemon.results) {
+      const secondReqPokemon = await fetApi(info.url);
+      const thirdReqPokemon = await fetApi(secondReqPokemon.species.url);
+      const datePrimitiveMerged = Object.assign({}, secondReqPokemon, thirdReqPokemon); 
+      pokemons.push(...PokemonDTO(datePrimitiveMerged));
+    }
 
-  const pokemons:IPokemons = [];
-  const firstReqPokemon = await fetApi("https://pokeapi.co/api/v2/pokemon?limit=15");
-
-  if(firstReqPokemon instanceof Error){
-    return console.log(firstReqPokemon);
+    return pokemons
   }
 
-  for(const info of firstReqPokemon.results) {
-    const secondReqPokemon = await fetApi(info.url);
-    const thirdReqPokemon = await fetApi(secondReqPokemon.species.url);
-    const datePrimitiveMerged = Object.assign({}, secondReqPokemon, thirdReqPokemon); 
-    pokemons.push(...PokemonDTO(datePrimitiveMerged));
+  async function searchPokemonSingle():Promise<any> {
+
+    const pokemons:IPokemons = [];
+    const pokemonSingle = [];
+    const namePokemon = (document.getElementById('namePokemon') as HTMLInputElement).value.toLocaleLowerCase();
+    const firstReqPokemon = await fetApi(`https://pokeapi.co/api/v2/pokemon/${namePokemon}`);
+
+    pokemonSingle.push(firstReqPokemon);
+
+    if(firstReqPokemon instanceof Error){
+      return console.log(firstReqPokemon);
+    }
+
+    for(const info of pokemonSingle) {
+      const thirdReqPokemon = await fetApi(info.species.url);
+      const datePrimitiveMerged = Object.assign({}, firstReqPokemon, thirdReqPokemon); 
+      pokemons.push(...PokemonDTO(datePrimitiveMerged));
+    }
+
+    arrPokemon.value = pokemons;
+    return arrPokemon;
   }
 
-  return pokemons
-}
+  function PokemonDTO(primitive:any):IPokemons {
 
-async function searchPokemonSingle():Promise<any> {
+    const pokemons:IPokemons = [];
 
-  const pokemons:IPokemons = [];
-  const pokemonSingle = [];
-  const namePokemon = (document.getElementById('namePokemon') as HTMLInputElement).value.toLocaleLowerCase();
-  const firstReqPokemon = await fetApi(`https://pokeapi.co/api/v2/pokemon/${namePokemon}`);
-
-  pokemonSingle.push(firstReqPokemon);
-
-  if(firstReqPokemon instanceof Error){
-    return console.log(firstReqPokemon);
-  }
-
-  for(const info of pokemonSingle) {
-    const thirdReqPokemon = await fetApi(info.species.url);
-    const datePrimitiveMerged = Object.assign({}, firstReqPokemon, thirdReqPokemon); 
-    pokemons.push(...PokemonDTO(datePrimitiveMerged));
-  }
-
-  arrPokemon.value = pokemons;
-  return arrPokemon;
-}
-
-function PokemonDTO(primitive:any):IPokemons {
-
-  const pokemons:IPokemons = [];
-
-  pokemons.push({
-    id: primitive.id,
-    name: primitive.name[0].toUpperCase()+primitive.name.slice(1),
-    color: primitive.color.name,
-    abilities: AbilitiesDTO(primitive.abilities),
-    description: primitive.flavor_text_entries[7].flavor_text.replace(/[^a-zA-Z-. ]/g, ""),
-    height: primitive.height,
-    weight: primitive.weight,
-    image: primitive.sprites.other.dream_world.front_default,
-  })
-
-  return pokemons
-}
-
-function AbilitiesDTO(primitives:any[]):IAbilities {
-
-  const abilities:IAbilities = [];
-
-  for(const infoAbility of primitives) {
-
-    abilities.push({
-      name: infoAbility.ability.name,
+    pokemons.push({
+      id: primitive.id,
+      name: primitive.name[0].toUpperCase()+primitive.name.slice(1),
+      color: primitive.color.name,
+      abilities: AbilitiesDTO(primitive.abilities),
+      description: primitive.flavor_text_entries[7].flavor_text.replace(/[^a-zA-Z-. ]/g, ""),
+      height: primitive.height,
+      weight: primitive.weight,
+      image: primitive.sprites.other.dream_world.front_default,
     })
+
+    return pokemons
   }
 
-  return abilities
-}
+  function AbilitiesDTO(primitives:any[]):IAbilities {
 
-(async function(){
-  arrPokemon.value = await searchPokemon();
-})()
+    const abilities:IAbilities = [];
+
+    for(const infoAbility of primitives) {
+
+      abilities.push({
+        name: infoAbility.ability.name,
+      })
+    }
+
+    return abilities
+  }
+
+  (async function(){
+    arrPokemon.value = await searchPokemon();
+  })()
 
 </script>
-
 <template>
   <header>
     <NavBar />
@@ -142,7 +145,7 @@ function AbilitiesDTO(primitives:any[]):IAbilities {
         </div>
       </form>
     </div>
-    <ErrorApi v-show="!showErrorApi" />
+    <ErrorApi v-show="showErrorApi" />
     <CardNewInfo :arrPokemon="arrPokemon"></CardNewInfo>
   </main>
 </template>
